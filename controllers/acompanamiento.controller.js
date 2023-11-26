@@ -5,7 +5,7 @@ export const listarAcomp = async (req, res) => {
 
   try {
     pool.query(
-      "SELECT CONVERT(a.id_acompanamiento,char)AS id_acompanamiento, a.nombre, a.precio, a.estado, CONVERT(ta.id_tipo_acompanamiento, char ) AS id_tipo_acompanamiento, ta.tipo FROM tb_acompanamiento as a JOIN tb_tipo_acompanamiento as ta ON a.id_tipo_acompanamiento = ta.id_tipo_acompanamiento WHERE a.estado=1;",
+      "SELECT CONVERT(a.id_acompanamiento,char)AS id_acompanamiento, a.nombre, a.precio, a.estado, CONVERT(ta.id_tipo_acompanamiento, char ) AS id_tipo_acompanamiento, ta.tipo, ta.tipo_seleccion, ta.limite_opciones FROM tb_acompanamiento as a JOIN tb_tipo_acompanamiento as ta ON a.id_tipo_acompanamiento = ta.id_tipo_acompanamiento WHERE a.estado=1;",
       function (err, result) {
         try {
           return res.status(200).json(result);
@@ -124,7 +124,7 @@ export const listarProductoAcomps = async (req, res) => {
 
   try {
     pool.query(
-      "SELECT CONVERT(pa.id_producto,char) as id_producto, p.nombre, CONVERT(pa.id_acompanamiento,char) as id_acompanamiento, a.nombre as acompanamiento, a.precio, ta.tipo as tipo FROM tb_producto_acompanamiento as pa JOIN tb_producto as p ON p.id_producto = pa.id_producto JOIN tb_acompanamiento as a ON a.id_acompanamiento = pa.id_acompanamiento JOIN tb_tipo_acompanamiento as ta ON a.id_tipo_acompanamiento = ta.id_tipo_acompanamiento WHERE pa.id_producto = ?;",
+      "SELECT CONVERT(pa.id_producto,char) as id_producto, p.nombre, CONVERT(pa.id_acompanamiento,char) as id_acompanamiento, a.nombre as acompanamiento, a.precio, ta.tipo as tipo, ta.tipo_seleccion, ta.limite_opciones FROM tb_producto_acompanamiento as pa JOIN tb_producto as p ON p.id_producto = pa.id_producto JOIN tb_acompanamiento as a ON a.id_acompanamiento = pa.id_acompanamiento JOIN tb_tipo_acompanamiento as ta ON a.id_tipo_acompanamiento = ta.id_tipo_acompanamiento WHERE pa.id_producto = ?;",
       [id],
       function (err, result) {
 
@@ -226,7 +226,7 @@ export const listarProductosPorAcomps = async (req, res) => {
 
   try {
     pool.query(
-      "SELECT CONVERT(pa.id_acompanamiento,char) as id_acompanamiento, a.nombre as acompanamiento, a.precio, ta.tipo as tipo FROM tb_producto_acompanamiento as pa JOIN tb_producto as p ON p.id_producto = pa.id_producto JOIN tb_acompanamiento as a ON a.id_acompanamiento = pa.id_acompanamiento JOIN tb_tipo_acompanamiento as ta ON a.id_tipo_acompanamiento = ta.id_tipo_acompanamiento WHERE a.estado = 1 AND pa.id_producto = ?;",
+      "SELECT CONVERT(pa.id_acompanamiento,char) as id_acompanamiento, a.nombre as acompanamiento, a.precio, ta.tipo as tipo, ta.tipo_seleccion, ta.limite_opciones FROM tb_producto_acompanamiento as pa JOIN tb_producto as p ON p.id_producto = pa.id_producto JOIN tb_acompanamiento as a ON a.id_acompanamiento = pa.id_acompanamiento JOIN tb_tipo_acompanamiento as ta ON a.id_tipo_acompanamiento = ta.id_tipo_acompanamiento WHERE a.estado = 1 AND pa.id_producto = ?;",
       [id],
       function (err, result) {
 

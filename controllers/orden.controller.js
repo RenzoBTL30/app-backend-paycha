@@ -7,7 +7,8 @@ import moment from 'moment-timezone';
 // 1 -> Pendiente
 // 2 -> En proceso
 // 3 -> Preparado
-// 4 -> Completado
+// 4 -> En camino
+// 5 -> Completado
 
 export const createOrden = async (req, res) => {
 
@@ -23,7 +24,6 @@ export const createOrden = async (req, res) => {
     const P_total_tapers = req.body.total_tapers;
     const P_total = req.body.total;
     const P_comprobante_pago = req.body.comprobante_pago;
-    const P_nota_adicional = req.body.nota_adicional;
     
     const productos = req.body.productos
     const P_codigo = uuidv4();
@@ -35,8 +35,8 @@ export const createOrden = async (req, res) => {
 
     try {
       pool.query(
-        "INSERT INTO tb_orden (id_usuario, id_direccion, id_metodo_pago, id_forma_entrega, codigo, billete_pago, cantidad_tapers, fecha_orden, subtotal, total_acomp, total_combo, total_tapers, total, comprobante_pago, nota_adicional, estado_dis, estado) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1', '1');",
-        [P_id_usuario, P_id_direccion, P_id_metodo_pago, P_id_forma_entrega, P_codigo, P_billete_pago, P_cantidad_tapers, fecha_formateada, P_subtotal, P_total_acomps, P_total_combos, P_total_tapers, P_total, P_comprobante_pago, P_nota_adicional],
+        "INSERT INTO tb_orden (id_usuario, id_direccion, id_metodo_pago, id_forma_entrega, codigo, billete_pago, cantidad_tapers, fecha_orden, subtotal, total_acomp, total_combo, total_tapers, total, comprobante_pago, estado_dis, estado) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1', '1');",
+        [P_id_usuario, P_id_direccion, P_id_metodo_pago, P_id_forma_entrega, P_codigo, P_billete_pago, P_cantidad_tapers, fecha_formateada, P_subtotal, P_total_acomps, P_total_combos, P_total_tapers, P_total, P_comprobante_pago],
         function (err, result) {
           try {
             const id_orden = result.insertId;
@@ -57,11 +57,12 @@ export const createOrden = async (req, res) => {
 
             return res.status(200).json({
               success: true,
-              id_orden: result.insertId
+              id_orden: result.insertId,
+              fecha_orden: fecha_formateada
             });
 
           } catch (error) {
-            console.log(error);
+            console.log(error); 
             console.log(err);
             return res.status(500).json("Error al crear la orden");
           }
@@ -100,7 +101,6 @@ export const findByStatus = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.nota_adicional,
             o.estado_dis,
             o.estado,
             CASE
@@ -127,7 +127,33 @@ export const findByStatus = async (req, res) => {
                 'imagen',p.imagen,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
-                'cantidad',op.cantidad_producto
+                'cantidad',op.cantidad_producto,
+                'acompanamientos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_acompanamiento', a.id_acompanamiento,
+                    'acompanamiento', a.acompanamiento,
+                    'precio', a.precio,
+                    'tipo', a.tipo
+                  ))
+                  FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                    id_acompanamiento INT PATH '$.id_acompanamiento',
+                    acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                    precio DECIMAL(10, 2) PATH '$.precio',
+                    tipo VARCHAR(150) PATH '$.tipo'
+                  )) AS a
+                ),
+                'combos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_combo', c.id_combo,
+                    'descripcion', c.descripcion,
+                    'precio', c.precio
+                  ))
+                  FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                    id_combo INT PATH '$.id_combo',
+                    descripcion VARCHAR(150) PATH '$.descripcion',
+                    precio DECIMAL(10, 2) PATH '$.precio'
+                  )) AS c
+                )
               )
             ) AS productos
         FROM
@@ -224,7 +250,6 @@ export const findByStatusToDelivery = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.nota_adicional,
             o.estado_dis,
             o.estado,
             JSON_OBJECT(
@@ -247,7 +272,33 @@ export const findByStatusToDelivery = async (req, res) => {
                     'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
-                    'cantidad',op.cantidad_producto
+                    'cantidad',op.cantidad_producto,
+                    'acompanamientos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_acompanamiento', a.id_acompanamiento,
+                        'acompanamiento', a.acompanamiento,
+                        'precio', a.precio,
+                        'tipo', a.tipo
+                      ))
+                      FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                        id_acompanamiento INT PATH '$.id_acompanamiento',
+                        acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                        precio DECIMAL(10, 2) PATH '$.precio',
+                        tipo VARCHAR(150) PATH '$.tipo'
+                      )) AS a
+                    ),
+                    'combos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_combo', c.id_combo,
+                        'descripcion', c.descripcion,
+                        'precio', c.precio
+                      ))
+                      FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                        id_combo INT PATH '$.id_combo',
+                        descripcion VARCHAR(150) PATH '$.descripcion',
+                        precio DECIMAL(10, 2) PATH '$.precio'
+                      )) AS c
+                    )
                 )
             ) AS productos
         FROM
@@ -332,7 +383,6 @@ export const findByStatusCocina = async (req, res) => {
             o.cantidad_tapers,
             o.tiempo_entrega,
             o.fecha_orden,
-            o.nota_adicional,
             o.estado_dis,
             o.estado,
             JSON_OBJECT(
@@ -350,7 +400,33 @@ export const findByStatusCocina = async (req, res) => {
                     'precio',p.precio,
                     'categoria','c.nombre',
                     'estado_disponible', p.estado_disponible,
-                    'cantidad',op.cantidad_producto
+                    'cantidad',op.cantidad_producto,
+                    'acompanamientos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_acompanamiento', a.id_acompanamiento,
+                        'acompanamiento', a.acompanamiento,
+                        'precio', a.precio,
+                        'tipo', a.tipo
+                      ))
+                      FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                        id_acompanamiento INT PATH '$.id_acompanamiento',
+                        acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                        precio DECIMAL(10, 2) PATH '$.precio',
+                        tipo VARCHAR(150) PATH '$.tipo'
+                      )) AS a
+                    ),
+                    'combos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_combo', c.id_combo,
+                        'descripcion', c.descripcion,
+                        'precio', c.precio
+                      ))
+                      FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                        id_combo INT PATH '$.id_combo',
+                        descripcion VARCHAR(150) PATH '$.descripcion',
+                        precio DECIMAL(10, 2) PATH '$.precio'
+                      )) AS c
+                    )
                 )
             ) AS productos
         FROM
@@ -436,7 +512,6 @@ export const findByCliente = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.nota_adicional,
             o.estado_dis,
             o.estado,
             CASE
@@ -463,7 +538,33 @@ export const findByCliente = async (req, res) => {
                     'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
-                    'cantidad',op.cantidad_producto
+                    'cantidad',op.cantidad_producto,
+                    'acompanamientos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_acompanamiento', a.id_acompanamiento,
+                        'acompanamiento', a.acompanamiento,
+                        'precio', a.precio,
+                        'tipo', a.tipo
+                      ))
+                      FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                        id_acompanamiento INT PATH '$.id_acompanamiento',
+                        acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                        precio DECIMAL(10, 2) PATH '$.precio',
+                        tipo VARCHAR(150) PATH '$.tipo'
+                      )) AS a
+                    ),
+                    'combos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_combo', c.id_combo,
+                        'descripcion', c.descripcion,
+                        'precio', c.precio
+                      ))
+                      FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                        id_combo INT PATH '$.id_combo',
+                        descripcion VARCHAR(150) PATH '$.descripcion',
+                        precio DECIMAL(10, 2) PATH '$.precio'
+                      )) AS c
+                    )
                 )
             ) AS productos
         FROM
@@ -559,7 +660,6 @@ export const findById = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.nota_adicional,
             o.estado_dis,
             o.estado,
             CASE
@@ -586,7 +686,33 @@ export const findById = async (req, res) => {
                     'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
-                    'cantidad',op.cantidad_producto
+                    'cantidad',op.cantidad_producto,
+                    'acompanamientos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_acompanamiento', a.id_acompanamiento,
+                        'acompanamiento', a.acompanamiento,
+                        'precio', a.precio,
+                        'tipo', a.tipo
+                      ))
+                      FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                        id_acompanamiento INT PATH '$.id_acompanamiento',
+                        acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                        precio DECIMAL(10, 2) PATH '$.precio',
+                        tipo VARCHAR(150) PATH '$.tipo'
+                      )) AS a
+                    ),
+                    'combos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_combo', c.id_combo,
+                        'descripcion', c.descripcion,
+                        'precio', c.precio
+                      ))
+                      FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                        id_combo INT PATH '$.id_combo',
+                        descripcion VARCHAR(150) PATH '$.descripcion',
+                        precio DECIMAL(10, 2) PATH '$.precio'
+                      )) AS c
+                    )
                 )
             ) AS productos
         FROM
@@ -683,7 +809,6 @@ export const findByClienteStatus = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.nota_adicional,
             o.estado_dis,
             o.estado,
             CASE
@@ -710,7 +835,33 @@ export const findByClienteStatus = async (req, res) => {
                     'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
-                    'cantidad',op.cantidad_producto
+                    'cantidad',op.cantidad_producto,
+                    'acompanamientos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_acompanamiento', a.id_acompanamiento,
+                        'acompanamiento', a.acompanamiento,
+                        'precio', a.precio,
+                        'tipo', a.tipo
+                      ))
+                      FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                        id_acompanamiento INT PATH '$.id_acompanamiento',
+                        acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                        precio DECIMAL(10, 2) PATH '$.precio',
+                        tipo VARCHAR(150) PATH '$.tipo'
+                      )) AS a
+                    ),
+                    'combos', (
+                      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'id_combo', c.id_combo,
+                        'descripcion', c.descripcion,
+                        'precio', c.precio
+                      ))
+                      FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                        id_combo INT PATH '$.id_combo',
+                        descripcion VARCHAR(150) PATH '$.descripcion',
+                        precio DECIMAL(10, 2) PATH '$.precio'
+                      )) AS c
+                    )
                 )
             ) AS productos
         FROM

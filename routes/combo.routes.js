@@ -13,5 +13,7 @@ router.put("/delete/:id", auth.auth, combo.deleteCombo);
 router.post("/crear/prodcombo", auth.auth, combo.asignarComboProducto);
 //router.put("/actualizar/prodcombo/:id", combo.editarComboProducto);
 router.get("/listar/prodcombo/:id", combo.listarComboProducto);
+router.get("/listar/prodsporcombo/:id", combo.listarProductosPorCombo);
+
 
 export default router;

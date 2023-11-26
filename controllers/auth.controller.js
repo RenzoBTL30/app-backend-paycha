@@ -22,7 +22,7 @@ export const login = (req, res) => {
       if (!miUsuario) {
           return res.status(401).json({
               success: false,
-              message: 'El email no fue encontrado',
+              message: 'Datos incorrectos',
           });
       }
 
@@ -52,7 +52,71 @@ export const login = (req, res) => {
       else {
           return res.status(401).json({
               success: false,
-              message: 'La contraseña es incorrecta'
+              message: 'Datos incorrectos'
+          });
+      }
+
+      
+  });
+
+};
+
+
+export const loginTrabajador = (req, res) => {
+
+  const {email,contrasenia} = req.body;
+  
+  findByEmail( email, async (err, miUsuario) => {
+  
+      if (err) {
+          return res.status(501).json({
+              success: false,
+              message: 'Hubo un error',
+              error: err
+          });
+      }
+
+      if (!miUsuario) {
+          return res.status(401).json({
+              success: false,
+              message: 'Datos incorrectos',
+          });
+      }
+
+      if (miUsuario.rol == 'Cliente') {
+        return res.status(401).json({
+            success: false,
+            message: 'No estás autorizado para ingresar',
+        });
+      }
+
+      const isPasswordValid = await bcrypt.compare(contrasenia, miUsuario.contrasenia);
+
+      if (isPasswordValid) {
+          const token = jwt.sign({id_usuario: miUsuario.id_usuario, email: miUsuario.email}, process.env.secretOrKey, {});
+
+          const data = {
+              id_usuario: `${miUsuario.id_usuario}`,
+              email: miUsuario.email,
+              nombre: miUsuario.nombre,
+              apellidos: miUsuario.apellidos,
+              celular: miUsuario.celular,
+              estado: miUsuario.estado,
+              rol: miUsuario.rol,
+              session_token: `JWT ${token}`
+          }
+
+          return res.status(201).json({
+              success: true,
+              message: 'El usuario fue autenticado',
+              data: data
+          });
+      }
+
+      else {
+          return res.status(401).json({
+              success: false,
+              message: 'Datos incorrectos'
           });
       }
 

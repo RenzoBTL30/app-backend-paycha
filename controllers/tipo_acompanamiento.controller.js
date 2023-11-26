@@ -5,7 +5,7 @@ export const listarTipoAcomp = async (req, res) => {
 
   try {
     pool.query(
-      "SELECT CONVERT(id_tipo_acompanamiento,char)AS id_tipo_acompanamiento, tipo FROM tb_tipo_acompanamiento;",
+      "SELECT CONVERT(id_tipo_acompanamiento,char)AS id_tipo_acompanamiento, tipo, tipo_seleccion, limite_opciones FROM tb_tipo_acompanamiento;",
       function (err, result) {
         try {
           return res.status(200).json(result);
@@ -22,11 +22,17 @@ export const listarTipoAcomp = async (req, res) => {
 export const createTipoAcomp = async (req, res) => {
 
     const P_tipo = req.body.tipo;
+    const P_tipo_seleccion = req.body.tipo_seleccion;
+    let P_limite_opciones = req.body.limite_opciones;
+
+    if (P_tipo_seleccion == 'Unica') {
+      P_limite_opciones = 1;
+    }
 
     try {
       pool.query(
-        "INSERT INTO tb_tipo_acompanamiento (tipo) VALUES(?);",
-        [P_tipo],
+        "INSERT INTO tb_tipo_acompanamiento (tipo, tipo_seleccion, limite_opciones) VALUES(?, ?, ?);",
+        [P_tipo, P_tipo_seleccion, P_limite_opciones],
         function (err, result) {
           try {
             return res.status(200).json({
@@ -47,11 +53,17 @@ export const editarTipoAcomp = async (req, res) => {
 
   const id = parseInt(req.params.id);
   const P_tipo = req.body.tipo;
+  const P_tipo_seleccion = req.body.tipo_seleccion;
+  let P_limite_opciones = req.body.limite_opciones;
+
+  if (P_tipo_seleccion == 'Unica') {
+    P_limite_opciones = 1;
+  }
 
   try {
     pool.query(
-      "UPDATE tb_tipo_acompanamiento set tipo=? WHERE id_tipo_acompanamiento=?",
-      [P_tipo, id],
+      "UPDATE tb_tipo_acompanamiento set tipo=?, tipo_seleccion=?, limite_opciones=? WHERE id_tipo_acompanamiento=?",
+      [P_tipo, P_tipo_seleccion, P_limite_opciones, id],
       function (err, result) {
         try {
           return res.status(200).json({

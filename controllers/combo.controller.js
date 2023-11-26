@@ -165,3 +165,29 @@ export const editarComboProducto = async (req, res) => {
   }
 };
 */
+
+export const listarProductosPorCombo = async (req, res) => {
+
+  const id = parseInt(req.params.id);
+
+  try {
+    pool.query(
+      "SELECT CONVERT(tc.id_combo,char) as id_combo, c.descripcion as combo, c.precio FROM tb_producto_combo as tc JOIN tb_producto as p ON p.id_producto = tc.id_producto JOIN tb_combo as c ON tc.id_combo = c.id_combo WHERE c.estado = 1 AND tc.id_producto = ?;",
+      [id],
+      function (err, result) {
+
+        result.forEach((row) => {
+          row.precio = parseFloat(row.precio);
+        });
+
+        try {
+          return res.status(200).json(result);
+        } catch (error) {
+          return res.status(500).json("Error al listar");
+        }
+      }
+    );
+  } catch (error) {
+    return res.status(500).json("Error al listar");
+  }
+};

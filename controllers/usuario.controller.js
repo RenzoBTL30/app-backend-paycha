@@ -11,7 +11,7 @@ export const createUsuario = async (req, res) => {
     const P_apellidos = req.body.apellidos;
     const P_celular = req.body.celular;
     const P_contrasenia = hash;
-    const P_puntos = 100;
+    const P_puntos = 50;
 
 
     try {
