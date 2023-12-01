@@ -7,6 +7,7 @@ import logger from 'morgan';
 import cors from 'cors';
 import passport from 'passport';
 import initializePassport from './passport.js';
+import { Server } from 'socket.io';
 
 import usuarioRoutes from "./routes/usuario.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -21,12 +22,16 @@ import metodoPagoRoutes from "./routes/metodo_pago.routes.js";
 import acompRoutes from "./routes/acompanamiento.routes.js";
 import tipoacompRoutes from "./routes/tipo_acompanamiento.routes.js";
 import comboRoutes from "./routes/combo.routes.js";
+import ordenesSocket from "./sockets/ordenes.socket.js";
 
 const app = express();
 
 const server = createServer(app);
 
 const port = process.env.PORT || 3000;
+
+const io = new Server(server, { cors: { origin: '*' } });
+
 
 app.use(express.json({ limit: '300kb' }));
 
@@ -48,7 +53,9 @@ app.disable('x-powered-by');
 
 app.set('port', port);
 
+// Sockets
 
+ordenesSocket(io);
 
 
 // Routes

@@ -256,7 +256,7 @@ export const findByStatusToDelivery = async (req, res) => {
             'id_direccion', CONVERT(d.id_direccion,char),
                 'direccion', d.direccion,
                 'lugar', l.lugar,
-                'comision', l.comision,
+                'comision', l.comision
             ) AS direccion,
             JSON_OBJECT(
             'id_usuario', CONVERT(u.id_usuario,char),
