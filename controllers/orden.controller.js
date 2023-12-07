@@ -9,6 +9,7 @@ import moment from 'moment-timezone';
 // 3 -> Preparado
 // 4 -> En camino
 // 5 -> Completado
+// 6 -> Cancelado
 
 export const createOrden = async (req, res) => {
 
@@ -35,12 +36,11 @@ export const createOrden = async (req, res) => {
 
     try {
       pool.query(
-        "INSERT INTO tb_orden (id_usuario, id_direccion, id_metodo_pago, id_forma_entrega, codigo, billete_pago, cantidad_tapers, fecha_orden, subtotal, total_acomp, total_combo, total_tapers, total, comprobante_pago, estado_dis, estado) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1', '1');",
+        "INSERT INTO tb_orden (id_usuario, id_direccion, id_metodo_pago, id_forma_entrega, codigo, billete_pago, cantidad_tapers, fecha_orden, subtotal, total_acomp, total_combo, total_tapers, total, comprobante_pago, estado) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1');",
         [P_id_usuario, P_id_direccion, P_id_metodo_pago, P_id_forma_entrega, P_codigo, P_billete_pago, P_cantidad_tapers, fecha_formateada, P_subtotal, P_total_acomps, P_total_combos, P_total_tapers, P_total, P_comprobante_pago],
         function (err, result) {
           try {
             const id_orden = result.insertId;
-
             
             for (const producto of productos) {
 
@@ -61,6 +61,7 @@ export const createOrden = async (req, res) => {
               fecha_orden: fecha_formateada
             });
 
+
           } catch (error) {
             console.log(error); 
             console.log(err);
@@ -73,7 +74,6 @@ export const createOrden = async (req, res) => {
       return res.status(500).json("Error al crear error la orden");
     }
 };
-
 
 export const findByStatus = async (req, res) => {
 
@@ -101,7 +101,6 @@ export const findByStatus = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.estado_dis,
             o.estado,
             CASE
                 WHEN o.id_direccion IS NOT NULL THEN
@@ -187,14 +186,12 @@ export const findByStatus = async (req, res) => {
         ON
           o.id_forma_entrega = f.id_forma_entrega
         WHERE
-          o.estado = ? && o.estado_dis = 1
+          o.estado = ?
         GROUP BY
           o.id_orden;
         `,
         [P_estado],
         function (err, result) {
-
-          console.log(result);
 
           result.forEach((row) => {
             row.subtotal = parseFloat(row.subtotal);
@@ -250,7 +247,6 @@ export const findByStatusToDelivery = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.estado_dis,
             o.estado,
             JSON_OBJECT(
             'id_direccion', CONVERT(d.id_direccion,char),
@@ -332,7 +328,7 @@ export const findByStatusToDelivery = async (req, res) => {
         ON
           o.id_forma_entrega = f.id_forma_entrega
         WHERE
-          o.estado = ? && f.id_forma_entrega = 2 && o.estado_dis = 1
+          o.estado = ? && f.id_forma_entrega = 2
         GROUP BY
           o.id_orden;
         `,
@@ -383,7 +379,6 @@ export const findByStatusCocina = async (req, res) => {
             o.cantidad_tapers,
             o.tiempo_entrega,
             o.fecha_orden,
-            o.estado_dis,
             o.estado,
             JSON_OBJECT(
             'id_usuario', CONVERT(u.id_usuario,char),
@@ -452,7 +447,7 @@ export const findByStatusCocina = async (req, res) => {
         ON
           o.id_forma_entrega = f.id_forma_entrega
         WHERE
-          o.estado = ? && o.estado_dis = 1
+          o.estado = ?
         GROUP BY
           o.id_orden;
         `,
@@ -512,7 +507,6 @@ export const findByCliente = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.estado_dis,
             o.estado,
             CASE
                 WHEN o.id_direccion IS NOT NULL THEN
@@ -598,7 +592,7 @@ export const findByCliente = async (req, res) => {
         ON
           o.id_forma_entrega = f.id_forma_entrega
         WHERE
-          u.id_usuario = ? && o.estado_dis = 1
+          u.id_usuario = ?
         GROUP BY
           o.id_orden;
         `,
@@ -660,7 +654,6 @@ export const findById = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.estado_dis,
             o.estado,
             CASE
                 WHEN o.id_direccion IS NOT NULL THEN
@@ -746,7 +739,7 @@ export const findById = async (req, res) => {
         ON
           o.id_forma_entrega = f.id_forma_entrega
         WHERE
-          o.id_orden = ? && o.estado_dis = 1
+          o.id_orden = ?
         GROUP BY
           o.id_orden;
         `,
@@ -809,7 +802,6 @@ export const findByClienteStatus = async (req, res) => {
             o.total_tapers,
             o.total,
             o.comprobante_pago,
-            o.estado_dis,
             o.estado,
             CASE
                 WHEN o.id_direccion IS NOT NULL THEN
@@ -895,7 +887,7 @@ export const findByClienteStatus = async (req, res) => {
         ON
           o.id_forma_entrega = f.id_forma_entrega
         WHERE
-          o.estado = ? && u.id_usuario = ? && o.estado_dis = 1
+          o.estado = ? && u.id_usuario = ?
         GROUP BY
           o.id_orden;
         `,
@@ -955,28 +947,27 @@ export const actualizarEstadoOrden = async (req, res) => {
   }
 };
 
-
 export const cancelarOrden = async (req, res) => {
 
   const id = parseInt(req.params.id); //id_orden
 
   try {
     pool.query(
-      "UPDATE tb_orden SET estado_dis=0 WHERE id_orden=?;",
+      "UPDATE tb_orden SET estado=6 WHERE id_orden=?;",
       [id],
       function (err, result) {
         try {
           return res.status(200).json({
               success: true,
-              message: "La orden se ha cancelado",
+              message: "La orden ha sido cancelada",
           });
         } catch (error) {
-          return res.status(500).json("Error al cancelar estado");
+          return res.status(500).json("Error al actualizar estado");
         }
       }
     );
   } catch (error) {
-    return res.status(500).json("Error al cancelar error al cancelar estado");
+    return res.status(500).json("Error al actualizar error al actualizar estado");
   }
 };
 

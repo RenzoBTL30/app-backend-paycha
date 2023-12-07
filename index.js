@@ -22,7 +22,7 @@ import metodoPagoRoutes from "./routes/metodo_pago.routes.js";
 import acompRoutes from "./routes/acompanamiento.routes.js";
 import tipoacompRoutes from "./routes/tipo_acompanamiento.routes.js";
 import comboRoutes from "./routes/combo.routes.js";
-import ordenesSocket from "./sockets/ordenes.socket.js";
+import ordenSocket from "./sockets/orden.socket.js";
 
 const app = express();
 
@@ -30,7 +30,7 @@ const server = createServer(app);
 
 const port = process.env.PORT || 3000;
 
-const io = new Server(server, { cors: { origin: '*' } });
+export const io = new Server(server, { cors: { origin: '*' } });
 
 
 app.use(express.json({ limit: '300kb' }));
@@ -55,7 +55,7 @@ app.set('port', port);
 
 // Sockets
 
-ordenesSocket(io);
+ordenSocket(io);
 
 
 // Routes

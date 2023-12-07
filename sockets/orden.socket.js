@@ -1,4 +1,5 @@
 export default (io) => {
+    //No olvidar quitar esos "status"
     const namespaceWebAdmin = io.of('/orders/status/webadmin');
     const namespaceClient = io.of('/orders/status/client');
 
@@ -26,8 +27,18 @@ export default (io) => {
           namespaceClient.emit('actualizar-orden', message);
         });
 
-        socket.on('pendiente', (message) => {
-          namespaceClient.emit('listar-ordenes', message);
+        socket.on('cancelado', (message) => {
+          namespaceClient.emit('actualizar-orden', message);
+        });
+
+
+        //De WebAdmin a Cocina
+        socket.on('nueva-orden-en-proceso', (message) => {
+          namespaceWebAdmin.emit('listar-orden', message);
+        });
+
+        socket.on('tiempo-entrega', (message) => {
+          namespaceClient.emit('actualizar-tiempo-entrega', message);
         });
       
         socket.on('disconnect', () => {
@@ -41,15 +52,15 @@ export default (io) => {
           namespaceWebAdmin.emit('listar-orden', message);
         });
 
-        socket.on('nueva-orden-en-proceso', (message) => {
-          namespaceWebAdmin.emit('listar-orden', message);
-        });
-
         socket.on('nueva-orden-preparada', (message) => {
           namespaceWebAdmin.emit('listar-orden', message);
         });
         
         socket.on('nueva-orden-en-camino', (message) => {
+          namespaceWebAdmin.emit('listar-orden', message);
+        });
+
+        socket.on('nueva-orden-cancelada', (message) => {
           namespaceWebAdmin.emit('listar-orden', message);
         });
 
