@@ -22,6 +22,7 @@ import metodoPagoRoutes from "./routes/metodo_pago.routes.js";
 import acompRoutes from "./routes/acompanamiento.routes.js";
 import tipoacompRoutes from "./routes/tipo_acompanamiento.routes.js";
 import comboRoutes from "./routes/combo.routes.js";
+import puntosRoutes from "./routes/puntos.routes.js";
 import ordenSocket from "./sockets/orden.socket.js";
 
 const app = express();
@@ -72,6 +73,7 @@ app.use("/api/metodopago",metodoPagoRoutes);
 app.use("/api/acompanamiento",acompRoutes);
 app.use("/api/tipoacompanamiento",tipoacompRoutes);
 app.use("/api/combo",comboRoutes);
+app.use("/api/puntos",puntosRoutes);
 
 
 

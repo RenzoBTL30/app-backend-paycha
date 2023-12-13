@@ -33,8 +33,8 @@ export default (io) => {
 
 
         //De WebAdmin a Cocina
-        socket.on('nueva-orden-en-proceso', (message) => {
-          namespaceWebAdmin.emit('listar-orden', message);
+        socket.on('nueva-orden-en-proceso', (message, id_orden) => {
+          namespaceWebAdmin.emit('listar-orden-en-proceso', message, id_orden);
         });
 
         socket.on('tiempo-entrega', (message) => {
