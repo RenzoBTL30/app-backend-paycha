@@ -1008,3 +1008,293 @@ export const insertTiempoEntrega = async (req, res) => {
     return res.status(500).json("Error al actualizar tiempo al actualizar tiempo");
   }
 };
+
+
+
+// Sistema Dashboard //
+
+export const historialOrdenes = async (req, res) => {
+
+  const P_fecha_inicio = moment(req.params.fecha_inicio).format('YYYY-MM-DD HH:mm:ss').toString();
+  const P_fecha_fin = moment(req.params.fecha_fin).format('YYYY-MM-DD HH:mm:ss').toString();
+
+    try {
+      pool.query(
+        `
+        SELECT
+            m.nombre AS metodo_pago,
+            f.descripcion AS forma_entrega,
+            o.codigo,
+            o.billete_pago,
+            o.cantidad_tapers,
+            o.tiempo_entrega,
+            o.fecha_orden,
+            o.puntos_canjeados,
+            o.subtotal,
+            o.total_tapers,
+            o.descuento,
+            o.total,
+            o.comprobante_pago,
+            o.puntos_ganados,
+            o.estado,
+            CASE
+                WHEN o.id_direccion IS NOT NULL THEN
+                    JSON_OBJECT(
+                        'id_direccion', CONVERT(d.id_direccion, CHAR),
+                        'direccion', d.direccion,
+                        'lugar', l.lugar,
+                        'comision', l.comision
+                    )
+                ELSE NULL
+            END AS direccion,
+            JSON_OBJECT(
+            'id_usuario', CONVERT(u.id_usuario,char),
+                'nombre', u.nombre,
+                'apellidos', u.apellidos,
+                'celular', u.celular
+            ) AS cliente,
+            JSON_ARRAYAGG(
+              JSON_OBJECT(
+                'id_producto', CONVERT(p.id_producto,char),
+                'nombre', p.nombre,
+                'descripcion', p.descripcion,
+                'imagen',p.imagen,
+                'precio',p.precio,
+                'estado_disponible', p.estado_disponible,
+                'cantidad',op.cantidad_producto,
+                'nota_adicional', op.nota_adicional,
+                'acompanamientos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_acompanamiento', a.id_acompanamiento,
+                    'acompanamiento', a.acompanamiento,
+                    'precio', a.precio,
+                    'tipo', a.tipo
+                  ))
+                  FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                    id_acompanamiento INT PATH '$.id_acompanamiento',
+                    acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                    precio DECIMAL(10, 2) PATH '$.precio',
+                    tipo VARCHAR(150) PATH '$.tipo'
+                  )) AS a
+                ),
+                'combos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_combo', c.id_combo,
+                    'combo', c.combo,
+                    'precio', c.precio
+                  ))
+                  FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                    id_combo INT PATH '$.id_combo',
+                    combo VARCHAR(150) PATH '$.combo',
+                    precio DECIMAL(10, 2) PATH '$.precio'
+                  )) AS c
+                )
+              )
+            ) AS productos
+        FROM
+          tb_orden as o
+        INNER JOIN
+          tb_usuario as u
+        ON
+          o.id_usuario = u.id_usuario
+        LEFT JOIN
+          tb_direccion as d
+        ON	
+          o.id_direccion = d.id_direccion
+        INNER JOIN
+          tb_orden_producto as op
+        ON
+          o.id_orden = op.id_orden
+        INNER JOIN
+          tb_producto as p
+        ON
+          p.id_producto = op.id_producto
+        LEFT JOIN
+          tb_lugar as l
+        ON
+          l.id_lugar = d.id_lugar
+		    INNER JOIN
+          tb_metodo_pago as m
+        ON
+          o.id_metodo_pago = m.id_metodo_pago
+        INNER JOIN
+          tb_forma_entrega as f
+        ON
+          o.id_forma_entrega = f.id_forma_entrega
+        WHERE
+          o.estado = 5 && o.fecha_orden >= ? && o.fecha_orden <= ?
+        GROUP BY
+          o.id_orden;
+        `,
+        [P_fecha_inicio, P_fecha_fin],
+        function (err, result) {
+
+          result.forEach((row) => {
+            row.subtotal = parseFloat(row.subtotal);
+          });
+
+          result.forEach((row) => {
+            row.total = parseFloat(row.total);
+          });
+
+          result.forEach((row) => {
+            row.total_tapers = parseFloat(row.total_tapers);
+          });
+
+          try {
+            return res.status(200).json(result);
+
+          } catch (error) {
+            return res.status(500).json("Error al mostrar la orden");
+          }
+        }
+      );
+
+    } catch (error) {
+      return res.status(500).json("Error al mostrar la orden");
+    }
+}
+
+
+
+export const historialOrdenesPorMesAnio = async (req, res) => {
+
+  const P_mes = moment(req.params.mes).format('M').toString();
+  const P_anio = moment(req.params.anio).format('YYYY').toString();
+
+    try {
+      pool.query(
+        `
+        SELECT
+            m.nombre AS metodo_pago,
+            f.descripcion AS forma_entrega,
+            o.codigo,
+            o.billete_pago,
+            o.cantidad_tapers,
+            o.tiempo_entrega,
+            o.fecha_orden,
+            o.puntos_canjeados,
+            o.subtotal,
+            o.total_tapers,
+            o.descuento,
+            o.total,
+            o.comprobante_pago,
+            o.puntos_ganados,
+            o.estado,
+            CASE
+                WHEN o.id_direccion IS NOT NULL THEN
+                    JSON_OBJECT(
+                        'id_direccion', CONVERT(d.id_direccion, CHAR),
+                        'direccion', d.direccion,
+                        'lugar', l.lugar,
+                        'comision', l.comision
+                    )
+                ELSE NULL
+            END AS direccion,
+            JSON_OBJECT(
+            'id_usuario', CONVERT(u.id_usuario,char),
+                'nombre', u.nombre,
+                'apellidos', u.apellidos,
+                'celular', u.celular
+            ) AS cliente,
+            JSON_ARRAYAGG(
+              JSON_OBJECT(
+                'id_producto', CONVERT(p.id_producto,char),
+                'nombre', p.nombre,
+                'descripcion', p.descripcion,
+                'imagen',p.imagen,
+                'precio',p.precio,
+                'estado_disponible', p.estado_disponible,
+                'cantidad',op.cantidad_producto,
+                'nota_adicional', op.nota_adicional,
+                'acompanamientos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_acompanamiento', a.id_acompanamiento,
+                    'acompanamiento', a.acompanamiento,
+                    'precio', a.precio,
+                    'tipo', a.tipo
+                  ))
+                  FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                    id_acompanamiento INT PATH '$.id_acompanamiento',
+                    acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                    precio DECIMAL(10, 2) PATH '$.precio',
+                    tipo VARCHAR(150) PATH '$.tipo'
+                  )) AS a
+                ),
+                'combos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_combo', c.id_combo,
+                    'combo', c.combo,
+                    'precio', c.precio
+                  ))
+                  FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                    id_combo INT PATH '$.id_combo',
+                    combo VARCHAR(150) PATH '$.combo',
+                    precio DECIMAL(10, 2) PATH '$.precio'
+                  )) AS c
+                )
+              )
+            ) AS productos
+        FROM
+          tb_orden as o
+        INNER JOIN
+          tb_usuario as u
+        ON
+          o.id_usuario = u.id_usuario
+        LEFT JOIN
+          tb_direccion as d
+        ON	
+          o.id_direccion = d.id_direccion
+        INNER JOIN
+          tb_orden_producto as op
+        ON
+          o.id_orden = op.id_orden
+        INNER JOIN
+          tb_producto as p
+        ON
+          p.id_producto = op.id_producto
+        LEFT JOIN
+          tb_lugar as l
+        ON
+          l.id_lugar = d.id_lugar
+		    INNER JOIN
+          tb_metodo_pago as m
+        ON
+          o.id_metodo_pago = m.id_metodo_pago
+        INNER JOIN
+          tb_forma_entrega as f
+        ON
+          o.id_forma_entrega = f.id_forma_entrega
+        WHERE
+          o.estado = 5 && MONTH(o.fecha_orden) = ? && YEAR(o.fecha_orden) = ?
+        GROUP BY
+          o.id_orden;
+        `,
+        [P_mes, P_anio],
+        function (err, result) {
+
+          result.forEach((row) => {
+            row.subtotal = parseFloat(row.subtotal);
+          });
+
+          result.forEach((row) => {
+            row.total = parseFloat(row.total);
+          });
+
+          result.forEach((row) => {
+            row.total_tapers = parseFloat(row.total_tapers);
+          });
+
+          try {
+            return res.status(200).json(result);
+
+          } catch (error) {
+            return res.status(500).json("Error al mostrar la orden");
+          }
+        }
+      );
+
+    } catch (error) {
+      return res.status(500).json("Error al mostrar la orden");
+    }
+}
