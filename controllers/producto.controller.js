@@ -31,7 +31,6 @@ export const createProducto = async (req, res) => {
         "INSERT INTO tb_producto (nombre, descripcion, precio, imagen, estado_disponible, estado, id_categoria) VALUES(?, ?, ?, ?, '1','1', ?);",
         [P_nombre, P_descripcion, P_precio, P_imagen, P_idcat],
         function (err, result) {
-          console.log(result);
           try {
             return res.status(200).json({
               success: true,
@@ -124,13 +123,11 @@ export const editarProductoSinImagen = async (req, res) => {
 export const findByCategoria = async (req, res) => {
 
   const id_categoria = parseInt(req.params.id);
-
   try {
     pool.query(
       "SELECT CONVERT(P.id_producto, char) AS id_producto , P.nombre, P.descripcion, P.precio, P.imagen, P.estado_disponible, CONVERT(P.id_categoria, char) AS id_categoria FROM tb_producto as P WHERE P.id_categoria = ? AND P.estado = '1';",
       [id_categoria],
       function (err, result) {
-
         // Convertir el valor de P.precio a decimal - ya que MySQL extrañamente lo envía como texto, osea entre comillas. Se probo el CONVERT y CAST colocandolo directamente en el query, pero no funcionó
         // Si se comenta estas 3 lineas y hacemos la petición de este método en el Postman, se nos mostrará el valor del precio entre comillas (texto) y habra un error de toDouble() en Flutter
         result.forEach((row) => {
