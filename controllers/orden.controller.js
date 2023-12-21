@@ -242,7 +242,6 @@ export const findByStatusAndDate = async (req, res) => {
        WHERE o.estado = ?  AND o.fecha_orden BETWEEN ? AND ?;
      `;
      pool.query(countQuery, [P_estado,fechaInicio,fechaFin], function (err, result) {
-      console.log(result)
         totalItems = result[0].total;
        // Calcular el número total de páginas
         totalPages = Math.ceil(totalItems / itemsPerPage);
