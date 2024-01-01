@@ -1220,6 +1220,9 @@ export const historialOrdenes = async (req, res) => {
       pool.query(
         `
         SELECT
+            CONVERT(o.id_orden,char) AS id_orden,
+            CONVERT(o.id_metodo_pago,char) AS id_metodo_pago,
+            CONVERT(o.id_forma_entrega,char) AS id_forma_entrega,
             m.nombre AS metodo_pago,
             f.descripcion AS forma_entrega,
             o.codigo,
@@ -1354,7 +1357,7 @@ export const historialOrdenes = async (req, res) => {
 }
 
 
-
+/*
 export const historialOrdenesPorMesAnio = async (req, res) => {
 
   const P_mes = moment(req.params.mes).format('M').toString();
@@ -1364,6 +1367,9 @@ export const historialOrdenesPorMesAnio = async (req, res) => {
       pool.query(
         `
         SELECT
+            CONVERT(o.id_orden,char) AS id_orden,
+            CONVERT(o.id_metodo_pago,char) AS id_metodo_pago,
+            CONVERT(o.id_forma_entrega,char) AS id_forma_entrega,
             m.nombre AS metodo_pago,
             f.descripcion AS forma_entrega,
             o.codigo,
@@ -1496,3 +1502,27 @@ export const historialOrdenesPorMesAnio = async (req, res) => {
       return res.status(500).json("Error al mostrar la orden");
     }
 }
+*/
+
+export const deleteOrden = async (req, res) => {
+
+  const id = parseInt(req.params.id);
+
+  try {
+    pool.query(
+      'CALL eliminarOrden(?)',
+      [id],
+      function (err, result) {
+        try {
+          return res.status(200).json({
+            success: true,
+          });
+        } catch (error) {
+          return res.status(500).json("Error al eliminar orden");
+        }
+      }
+    );
+  } catch (error) {
+    return res.status(500).json("Error al eliminar orden");
+  }
+};
