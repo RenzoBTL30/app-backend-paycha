@@ -9,7 +9,7 @@ router.post("/crear", auth.auth, orden.createOrden);
 router.get("/buscar/porestado/:estado", auth.auth, orden.findByStatus);
 router.get("/buscar/porestado/fecha/:estado", auth.auth, orden.findByStatusAndDate);
 router.get("/buscar/porid/:id", auth.auth, orden.findById);
-router.get("/buscar/porcliente/:id", auth.auth, orden.findByCliente);
+router.get("/buscar/porcliente/:id", auth.auth, orden.findWithRecentDateByCliente);
 router.get("/buscar/porclienteestado/:id/:estado", auth.auth, orden.findByClienteStatus);
 
 //router.get("/listar", orden.listarCategoria);

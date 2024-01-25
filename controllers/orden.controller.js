@@ -129,7 +129,6 @@ export const findByStatus = async (req, res) => {
                 'id_producto', CONVERT(p.id_producto,char),
                 'nombre', p.nombre,
                 'descripcion', p.descripcion,
-                'imagen',p.imagen,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
                 'cantidad',op.cantidad_producto,
@@ -290,7 +289,6 @@ export const findByStatusAndDate = async (req, res) => {
                 'id_producto', CONVERT(p.id_producto,char),
                 'nombre', p.nombre,
                 'descripcion', p.descripcion,
-                'imagen',p.imagen,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
                 'cantidad',op.cantidad_producto,
@@ -439,7 +437,6 @@ export const findByStatusToDelivery = async (req, res) => {
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
                     'descripcion', p.descripcion,
-                    'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -566,7 +563,6 @@ export const findByStatusCocina = async (req, res) => {
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
                     'descripcion', p.descripcion,
-                    'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -656,9 +652,10 @@ export const findByStatusCocina = async (req, res) => {
     }
 }
 
-export const findByCliente = async (req, res) => {
+export const findWithRecentDateByCliente = async (req, res) => {
 
   const id = parseInt(req.params.id);
+  const fecha_actual = moment().format('YYYY-MM-DD');
 
     try {
       pool.query(
@@ -705,7 +702,6 @@ export const findByCliente = async (req, res) => {
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
                     'descripcion', p.descripcion,
-                    'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -769,11 +765,10 @@ export const findByCliente = async (req, res) => {
         ON
           o.id_forma_entrega = f.id_forma_entrega
         WHERE
-          u.id_usuario = ?
+          u.id_usuario = ? && o.fecha_orden >= '${fecha_actual} 00:00:00' && o.fecha_orden <= '${fecha_actual} 23:59:59'
         GROUP BY
           o.id_orden;
         `,
-        
         [id],
         function (err, result) {
 
@@ -854,7 +849,6 @@ export const findById = async (req, res) => {
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
                     'descripcion', p.descripcion,
-                    'imagen',p.imagen,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -1023,7 +1017,6 @@ export const findByClienteStatus = async (req, res) => {
                 'id_producto', CONVERT(p.id_producto,char),
                       'nombre', p.nombre,
                       'descripcion', p.descripcion,
-                      'imagen',p.imagen,
                       'precio',p.precio,
                       'estado_disponible', p.estado_disponible,
                       'cantidad',op.cantidad_producto,
@@ -1091,7 +1084,9 @@ export const findByClienteStatus = async (req, res) => {
           AND o.fecha_orden BETWEEN ? AND ?
         GROUP BY
           o.id_orden
-          LIMIT ${itemsPerPage} OFFSET ${offset};
+        ORDER BY
+          o.fecha_orden DESC
+        LIMIT ${itemsPerPage} OFFSET ${offset};
         `,
         
         [P_estado, id,fechaInicio,fechaFin],
@@ -1259,7 +1254,6 @@ export const historialOrdenes = async (req, res) => {
                 'id_producto', CONVERT(p.id_producto,char),
                 'nombre', p.nombre,
                 'descripcion', p.descripcion,
-                'imagen',p.imagen,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
                 'cantidad',op.cantidad_producto,
