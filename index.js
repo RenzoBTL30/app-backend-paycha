@@ -23,6 +23,7 @@ import acompRoutes from "./routes/acompanamiento.routes.js";
 import tipoacompRoutes from "./routes/tipo_acompanamiento.routes.js";
 import comboRoutes from "./routes/combo.routes.js";
 import puntosRoutes from "./routes/puntos.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 import ordenSocket from "./sockets/orden.socket.js";
 
 const app = express();
@@ -74,6 +75,8 @@ app.use("/api/acompanamiento",acompRoutes);
 app.use("/api/tipoacompanamiento",tipoacompRoutes);
 app.use("/api/combo",comboRoutes);
 app.use("/api/puntos",puntosRoutes);
+app.use("/api/dashboard",dashboardRoutes);
+
 
 
 

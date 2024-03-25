@@ -31,6 +31,8 @@ export const createOrden = async (req, res) => {
     const productos = req.body.productos
     const P_codigo = uuidv4();
 
+    let productos_agotados = [];
+
     let fecha_actual = Date.now();
     let fecha_moment = moment(fecha_actual);
     fecha_moment.tz('America/Lima');
@@ -40,11 +42,29 @@ export const createOrden = async (req, res) => {
       pool.query(
         "INSERT INTO tb_orden (id_usuario, id_direccion, id_metodo_pago, id_forma_entrega, codigo, billete_pago, cantidad_tapers, fecha_orden, puntos_canjeados, subtotal, total_tapers, descuento, total, comprobante_pago, puntos_ganados, estado) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1');",
         [P_id_usuario, P_id_direccion, P_id_metodo_pago, P_id_forma_entrega, P_codigo, P_billete_pago, P_cantidad_tapers, fecha_formateada, P_puntos_canjeados, P_subtotal, P_total_tapers, P_descuento, P_total, P_comprobante_pago, P_puntos_ganados],
-        function (err, result) {
+        async function (err, result) {
           try {
             const id_orden = result.insertId;
+
+            for (const producto of productos) {
+              const producto_agotado = await verificarEstadoDisponibleProducto(producto.id_producto);
+
+              if (producto_agotado.estado_disponible == 0) {
+                productos_agotados.push(producto_agotado);
+              }
+
+            }
+
+            if (productos_agotados.length == 1) { // Si solo un producto esta agotado
+              return res.status(500).json(`El producto ${productos_agotados[0].nombre} acaba de agotarse, tienes que elegir otro`);
+            }
+
+            if (productos_agotados.length > 1) { // Si hay varios productos agotados
+              return res.status(500).json(`Los productos ${productos_agotados.map(prod => prod.nombre).join(', ')} acaba de agotarse, tienes que elegir otro`);
+            }
             
             for (const producto of productos) {
+
 
               if (producto.acompanamientos.length === 0 && producto.combos.length === 0) {
                 orden_producto.createOrdenProducto(id_orden, producto.id_producto, producto.cantidad_producto, producto.nota_adicional);
@@ -128,7 +148,6 @@ export const findByStatus = async (req, res) => {
               JSON_OBJECT(
                 'id_producto', CONVERT(p.id_producto,char),
                 'nombre', p.nombre,
-                'descripcion', p.descripcion,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
                 'cantidad',op.cantidad_producto,
@@ -288,7 +307,6 @@ export const findByStatusAndDate = async (req, res) => {
               JSON_OBJECT(
                 'id_producto', CONVERT(p.id_producto,char),
                 'nombre', p.nombre,
-                'descripcion', p.descripcion,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
                 'cantidad',op.cantidad_producto,
@@ -436,7 +454,6 @@ export const findByStatusToDelivery = async (req, res) => {
             JSON_OBJECT(
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
-                    'descripcion', p.descripcion,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -562,7 +579,6 @@ export const findByStatusCocina = async (req, res) => {
             JSON_OBJECT(
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
-                    'descripcion', p.descripcion,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -701,7 +717,6 @@ export const findWithRecentDateByCliente = async (req, res) => {
             JSON_OBJECT(
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
-                    'descripcion', p.descripcion,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -848,7 +863,6 @@ export const findById = async (req, res) => {
             JSON_OBJECT(
               'id_producto', CONVERT(p.id_producto,char),
                     'nombre', p.nombre,
-                    'descripcion', p.descripcion,
                     'precio',p.precio,
                     'estado_disponible', p.estado_disponible,
                     'cantidad',op.cantidad_producto,
@@ -1016,7 +1030,6 @@ export const findByClienteStatus = async (req, res) => {
               JSON_OBJECT(
                 'id_producto', CONVERT(p.id_producto,char),
                       'nombre', p.nombre,
-                      'descripcion', p.descripcion,
                       'precio',p.precio,
                       'estado_disponible', p.estado_disponible,
                       'cantidad',op.cantidad_producto,
@@ -1208,8 +1221,13 @@ export const insertTiempoEntrega = async (req, res) => {
 
 export const historialOrdenes = async (req, res) => {
 
-  const P_fecha_inicio = moment(req.params.fecha_inicio).format('YYYY-MM-DD HH:mm:ss').toString();
-  const P_fecha_fin = moment(req.params.fecha_fin).format('YYYY-MM-DD HH:mm:ss').toString();
+  const P_fecha_inicio = req.params.fecha_inicio;
+  const P_fecha_fin = req.params.fecha_fin;
+
+  // Ya no es necesario estos 2 códigos porque el frontend hace el formateo de las fechas:
+
+  //const P_fecha_inicio = moment(req.params.fecha_inicio).startOf('day').format('YYYY-MM-DD HH:mm:ss').toString();
+  //const P_fecha_fin = moment(req.params.fecha_fin).endOf('day').format('YYYY-MM-DD HH:mm:ss').toString();
 
     try {
       pool.query(
@@ -1253,7 +1271,6 @@ export const historialOrdenes = async (req, res) => {
               JSON_OBJECT(
                 'id_producto', CONVERT(p.id_producto,char),
                 'nombre', p.nombre,
-                'descripcion', p.descripcion,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
                 'cantidad',op.cantidad_producto,
@@ -1399,8 +1416,6 @@ export const historialOrdenesPorMesAnio = async (req, res) => {
               JSON_OBJECT(
                 'id_producto', CONVERT(p.id_producto,char),
                 'nombre', p.nombre,
-                'descripcion', p.descripcion,
-                'imagen',p.imagen,
                 'precio',p.precio,
                 'estado_disponible', p.estado_disponible,
                 'cantidad',op.cantidad_producto,
@@ -1519,4 +1534,21 @@ export const deleteOrden = async (req, res) => {
   } catch (error) {
     return res.status(500).json("Error al eliminar orden");
   }
+};
+
+const verificarEstadoDisponibleProducto = (id_producto) => {
+  return new Promise((resolve, reject) => {
+      pool.query(
+        "SELECT nombre, estado_disponible FROM tb_producto WHERE id_producto=?;",
+        [id_producto],
+        (err, result) => {
+          if (err) {
+            console.error('Error al verificar:', err);
+            reject(err);
+          } else {
+            resolve(result[0]);
+          }
+        }
+      );
+  });
 };

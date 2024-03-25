@@ -13,7 +13,7 @@ router.get("/buscar/porcliente/:id", auth.auth, orden.findWithRecentDateByClient
 router.get("/buscar/porclienteestado/:id/:estado", auth.auth, orden.findByClienteStatus);
 
 //router.get("/listar", orden.listarCategoria);
-router.get("/buscar/porestadotodelivery/:estado", auth.auth, orden.findByStatusToDelivery);
+router.get("/buscar/porestadotodelivery/:estado", orden.findByStatusToDelivery);
 router.get("/buscar/porestadococina/:estado", auth.auth, orden.findByStatusCocina);
 router.get("/historialordenes/:fecha_inicio/:fecha_fin", auth.auth, orden.historialOrdenes);
 router.get("/historialfechasanio/:anio/:mes", auth.auth, orden.historialOrdenes);

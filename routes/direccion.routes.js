@@ -8,7 +8,8 @@ const router = Router();
 router.post("/crear", auth.auth, direccion.createDireccion);
 router.get("/buscarPorUsuario/:id", direccion.findByUsuario);
 router.get("/buscarporid/:id", direccion.findById);
-router.put("/actualizar/:id", auth.auth, direccion.editarDireccion);
+router.put("/delete/:id", auth.auth, direccion.deleteDireccion);
+//router.put("/actualizar/:id", auth.auth, direccion.editarDireccion);
 
 
 export default router;
