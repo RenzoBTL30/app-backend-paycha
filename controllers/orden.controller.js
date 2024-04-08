@@ -1,5 +1,6 @@
 import { pool } from "../database.js";
 import { v4 as uuidv4 } from 'uuid';
+import { customAlphabet } from 'nanoid';
 import * as orden_producto from "../controllers/orden_producto.controller.js"
 import moment from 'moment-timezone';
 import { ganarPuntos } from "./puntos.controller.js";
@@ -29,7 +30,9 @@ export const createOrden = async (req, res) => {
     const P_puntos_ganados = req.body.puntos_ganados;
 
     const productos = req.body.productos
-    const P_codigo = uuidv4();
+    const generateNanoId = customAlphabet('1234567890abcdef', 8); //Generar identificador único de 8 caracteres
+
+    const P_codigo = generateNanoId();
 
     let productos_agotados = [];
 
