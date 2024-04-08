@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { customAlphabet } from 'nanoid';
 import * as orden_producto from "../controllers/orden_producto.controller.js"
 import moment from 'moment-timezone';
-import { ganarPuntos } from "./puntos.controller.js";
+import { ganarPuntos, restaurarPuntos } from "./puntos.controller.js";
 
 // Estados de la orden
 // 1 -> Pendiente
@@ -1171,6 +1171,9 @@ export const actualizarEstadoOrden = async (req, res) => {
 export const cancelarOrden = async (req, res) => {
 
   const id = parseInt(req.params.id); //id_orden
+  const id_usuario = req.body.id_usuario;
+  const P_puntos_ganados = req.body.puntos_ganados;
+  const P_puntos_canjeados = req.body.puntos_canjeados;
 
   try {
     pool.query(
@@ -1178,6 +1181,9 @@ export const cancelarOrden = async (req, res) => {
       [id],
       function (err, result) {
         try {
+
+          restaurarPuntos(id_usuario, P_puntos_ganados, P_puntos_canjeados);
+
           return res.status(200).json({
               success: true,
               message: "La orden ha sido cancelada",

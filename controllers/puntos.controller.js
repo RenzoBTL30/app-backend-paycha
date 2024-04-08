@@ -162,6 +162,25 @@ export const ganarPuntos = (id, puntos) => {
 };
 
 
+export const restaurarPuntos = (id, puntos_ganados, puntos_canjeados) => {
+  
+  try {
+    pool.query(
+      'CALL restaurarPuntos(?, ?, ?)',
+      [id, puntos_ganados, puntos_canjeados],
+      (err, result) => {
+        if (err) {
+          console.error('Error al ejecutar el procedimiento almacenado: ', err);
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Error al ganar puntos: ', error);
+  }
+  
+};
+
+
 export const actualizarPuntos = async (req, res) => {
 
     const id = parseInt(req.params.id); //id_usuario

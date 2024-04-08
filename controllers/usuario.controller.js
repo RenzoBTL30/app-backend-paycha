@@ -1,5 +1,6 @@
 import { pool } from "../database.js";
 import * as auth from "../controllers/auth.controller.js"
+import { validarEmail } from "./auth.controller.js";
 import bcrypt from "bcryptjs";
 
 export const createUsuario = async (req, res) => {
@@ -14,25 +15,30 @@ export const createUsuario = async (req, res) => {
     const P_puntos = 50;
 
 
-    try {
-      pool.query(
-        "INSERT INTO tb_usuario (email, nombre, apellidos, celular, contrasenia, puntos_descuento, estado) VALUES(?, ?, ?, ?, ?, ?, '1');",
-        [P_email, P_nombre, P_apellidos, P_celular, P_contrasenia, P_puntos],
-        function (err, result) {
-          try {
-            return res.status(200).json({
-                success: true,
-                message: "El registro se ha completado correctamente",
-                id_usuario: result.insertId
-            });
-          } catch (error) {
-            return res.status(500).json("Error al crear usuarios");
+    if (await validarEmail(P_email) == 0) {
+      try {
+        pool.query(
+          "INSERT INTO tb_usuario (email, nombre, apellidos, celular, contrasenia, puntos_descuento, estado) VALUES(?, ?, ?, ?, ?, ?, '1');",
+          [P_email, P_nombre, P_apellidos, P_celular, P_contrasenia, P_puntos],
+          function (err, result) {
+            try {
+              return res.status(200).json({
+                  success: true,
+                  message: "El registro se ha completado correctamente",
+                  id_usuario: result.insertId
+              });
+            } catch (error) {
+              return res.status(500).json("Error al crear usuarios");
+            }
           }
-        }
-      );
-    } catch (error) {
-      return res.status(500).json("Error al crear error al crear usuarios");
+        );
+      } catch (error) {
+        return res.status(500).json("Error al crear error al crear usuarios");
+      }
+    } else {
+      return res.status(500).json('Ya existe una cuenta con el correo electrónico ingresado');
     }
+    
 };
 
 export const updateUsuario = async (req, res) => {

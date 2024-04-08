@@ -225,7 +225,7 @@ export const enviarLinkRecuperacionContra = async (req, res) => {
 };
 
 
-const validarEmail = (email) => {
+export const validarEmail = (email) => {
     return new Promise((resolve, reject) => {
         pool.query(
           "CALL validarEmail(?, @resultado);",
@@ -253,7 +253,6 @@ const validarEmail = (email) => {
         );
     });
 };
-
 
 const findIdUsuarioAndNameByEmail = (email) => {
   return new Promise((resolve, reject) => {
