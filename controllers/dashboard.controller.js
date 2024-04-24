@@ -8,7 +8,7 @@ export const ventasCompletadasPorFecha = async (req, res) => {
 
     try {
         pool.query(
-            "SELECT SUM(total) as total_ventas_completadas_dia, COUNT(id_orden) as cant_ventas_completadas_dia, DATE(fecha_orden) as fecha FROM tb_orden WHERE estado=5 && fecha_orden >= ? && fecha_orden <= ? GROUP BY DAY(fecha_orden);",
+            "SELECT SUM(total) as total_ventas_completadas_dia, COUNT(id_orden) as cant_ventas_completadas_dia, DATE(fecha_orden) as fecha FROM tb_orden WHERE estado=5 && fecha_orden >= ? && fecha_orden <= ? GROUP BY DAY(fecha_orden), DATE(fecha_orden);",
             [P_fecha_inicio, P_fecha_fin],
             function (err, result) {
                 try {
@@ -30,7 +30,7 @@ export const ventasCanceladasPorFecha = async (req, res) => {
 
     try {
         pool.query(
-            "SELECT COUNT(id_orden) as cant_ventas_canceladas_dia, DATE(fecha_orden) as fecha FROM tb_orden WHERE estado=6 && fecha_orden >= ? && fecha_orden <= ? GROUP BY DAY(fecha_orden);",
+            "SELECT COUNT(id_orden) as cant_ventas_canceladas_dia, DATE(fecha_orden) as fecha FROM tb_orden WHERE estado=6 && fecha_orden >= ? && fecha_orden <= ? GROUP BY DAY(fecha_orden), DATE(fecha_orden);",
             [P_fecha_inicio, P_fecha_fin],
             function (err, result) {
                 try {
