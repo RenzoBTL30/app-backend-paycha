@@ -1,5 +1,4 @@
 import { pool } from "../database.js";
-import { v4 as uuidv4 } from 'uuid';
 import { customAlphabet } from 'nanoid';
 import * as orden_producto from "../controllers/orden_producto.controller.js"
 import moment from 'moment-timezone';
@@ -245,6 +244,153 @@ export const findByStatus = async (req, res) => {
       return res.status(500).json("Error al mostrar la orden");
     }
 }
+
+export const findWithRecentDateByStatus = async (req, res) => {
+
+  const P_estado = parseInt(req.params.estado);
+  const fecha_actual = moment().format('YYYY-MM-DD');
+
+    try {
+
+      pool.query(
+        `
+        SELECT
+            CONVERT(o.id_orden,char) AS id_orden,
+            CONVERT(o.id_usuario,char) AS id_usuario,
+            CONVERT(o.id_direccion,char) AS id_direccion,
+            CONVERT(o.id_metodo_pago,char) AS id_metodo_pago,
+            m.nombre AS metodo_pago,
+            CONVERT(o.id_forma_entrega,char) AS id_forma_entrega,
+            f.descripcion AS forma_entrega,
+            o.codigo,
+            o.billete_pago,
+            o.cantidad_tapers,
+            o.tiempo_entrega,
+            o.fecha_orden,
+            o.puntos_canjeados,
+            o.subtotal,
+            o.total_tapers,
+            o.descuento,
+            o.total,
+            o.comprobante_pago,
+            o.puntos_ganados,
+            o.estado,
+            CASE
+                WHEN o.id_direccion IS NOT NULL THEN
+                    JSON_OBJECT(
+                        'id_direccion', CONVERT(d.id_direccion, CHAR),
+                        'direccion', d.direccion,
+                        'lugar', l.lugar,
+                        'comision', l.comision
+                    )
+                ELSE NULL
+            END AS direccion,
+            JSON_OBJECT(
+            'id_usuario', CONVERT(u.id_usuario,char),
+                'nombre', u.nombre,
+                'apellidos', u.apellidos,
+                'celular', u.celular
+            ) AS cliente,
+            JSON_ARRAYAGG(
+              JSON_OBJECT(
+                'id_producto', CONVERT(p.id_producto,char),
+                'nombre', p.nombre,
+                'precio',p.precio,
+                'estado_disponible', p.estado_disponible,
+                'cantidad',op.cantidad_producto,
+                'nota_adicional', op.nota_adicional,
+                'acompanamientos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_acompanamiento', a.id_acompanamiento,
+                    'acompanamiento', a.acompanamiento,
+                    'precio', a.precio,
+                    'tipo', a.tipo
+                  ))
+                  FROM JSON_TABLE(op.acompanamientos, '$[*]' COLUMNS (
+                    id_acompanamiento INT PATH '$.id_acompanamiento',
+                    acompanamiento VARCHAR(150) PATH '$.acompanamiento',
+                    precio DECIMAL(10, 2) PATH '$.precio',
+                    tipo VARCHAR(150) PATH '$.tipo'
+                  )) AS a
+                ),
+                'combos', (
+                  SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id_combo', c.id_combo,
+                    'combo', c.combo,
+                    'precio', c.precio
+                  ))
+                  FROM JSON_TABLE(op.combos, '$[*]' COLUMNS (
+                    id_combo INT PATH '$.id_combo',
+                    combo VARCHAR(150) PATH '$.combo',
+                    precio DECIMAL(10, 2) PATH '$.precio'
+                  )) AS c
+                )
+              )
+            ) AS productos
+        FROM
+          tb_orden as o
+        INNER JOIN
+          tb_usuario as u
+        ON
+          o.id_usuario = u.id_usuario
+        LEFT JOIN
+          tb_direccion as d
+        ON	
+          o.id_direccion = d.id_direccion
+        INNER JOIN
+          tb_orden_producto as op
+        ON
+          o.id_orden = op.id_orden
+        INNER JOIN
+          tb_producto as p
+        ON
+          p.id_producto = op.id_producto
+        LEFT JOIN
+          tb_lugar as l
+        ON
+          l.id_lugar = d.id_lugar
+		    INNER JOIN
+          tb_metodo_pago as m
+        ON
+          o.id_metodo_pago = m.id_metodo_pago
+        INNER JOIN
+          tb_forma_entrega as f
+        ON
+          o.id_forma_entrega = f.id_forma_entrega
+        WHERE
+          o.estado = ? && o.fecha_orden >= '${fecha_actual} 00:00:00' && o.fecha_orden <= '${fecha_actual} 23:59:59'
+        GROUP BY
+          o.id_orden
+        `,
+        [P_estado],
+        function (err, result) {
+
+          result.forEach((row) => {
+            row.subtotal = parseFloat(row.subtotal);
+          });
+
+          result.forEach((row) => {
+            row.total = parseFloat(row.total);
+          });
+
+          result.forEach((row) => {
+            row.total_tapers = parseFloat(row.total_tapers);
+          });
+
+          try {
+            return res.status(200).json(result);
+          } catch (error) {
+            return res.status(500).json("Error al mostrar la orden");
+          }
+        }
+      );
+
+    } catch (error) {
+      return res.status(500).json("Error al mostrar la orden");
+    }
+}
+
+
 export const findByStatusAndDate = async (req, res) => {
 
   const P_estado = parseInt(req.params.estado);
@@ -974,7 +1120,6 @@ export const findByClienteStatus = async (req, res) => {
   const offset = (page - 1) * itemsPerPage;
   const fechaInicio = req.query.fechaInicio; // Asegúrate de que esta fecha sea válida y en el formato correcto
   const fechaFin = req.query.fechaFin; // Asegúrate de que esta fecha sea válida y en el formato correcto
-
     try {
      let totalPages = 0;
      let totalItems =0 ;
